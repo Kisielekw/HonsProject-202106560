@@ -2,7 +2,7 @@
 #include <cmath>
 #include <algorithm>
 
-void cppImageProcessing::SobelBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
+void cppImageProcessing::Sobel(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
 {
 	float Gx[9] = {
 		1, 0, -1,

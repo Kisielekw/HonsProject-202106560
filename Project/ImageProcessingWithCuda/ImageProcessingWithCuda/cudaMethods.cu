@@ -92,7 +92,7 @@ __global__ void GaussBlur(const unsigned char* imageIn, unsigned char* imageOut,
 	imageOut[x + y * width] = Convolution(imageIn, x, y, gaussKernel, width, height);
 }
 
-void cudaImageProcessing::SobelBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
+void cudaImageProcessing::Sobel(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
 {
 	unsigned char* cudaImageIn = NULL;
 	unsigned char* cudaImageOut = NULL;
