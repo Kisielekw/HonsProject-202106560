@@ -38,6 +38,9 @@ void cppImageProcessing::SobelBlur(const unsigned char* imageIn, unsigned char* 
 		temp = std::min(255, std::max(0, temp));
 		imageOut[i] = static_cast<unsigned char>(temp);
 	}
+
+	delete[] sobelX;
+	delete[] sobelY;
 }
 
 int cppImageProcessing::Convolution(const unsigned char* imageIn, const float* kernal, const int x, const int y, const int width, const int height)
