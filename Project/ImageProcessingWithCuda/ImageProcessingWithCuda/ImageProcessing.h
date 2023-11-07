@@ -13,5 +13,6 @@ private:
 static class cudaImageProcessing
 {
 public:
+	static void GaussianBlur(const unsigned char*, unsigned char*, const int, const int, const float);
 	static void SobelBlur(const unsigned char*, unsigned char*, const int, const int);
 };

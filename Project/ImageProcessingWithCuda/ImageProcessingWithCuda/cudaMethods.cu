@@ -29,6 +29,13 @@ __device__ int Convolution(const unsigned char* imageIn,const int x, const int y
 	return sum;
 }
 
+__device__ float GaussianFunction2D(const int x, const int y, const float sigma)
+{
+	double expPow = static_cast<double>((x * x) + (y * y)) / (2.0 * static_cast<double>(sigma * sigma));
+	double exponentail = exp(-expPow);
+	return exponentail / (2 * 3.1415 * (sigma * sigma));
+}
+
 __global__ void Sobel(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
 {
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -59,6 +66,32 @@ __global__ void Sobel(const unsigned char* imageIn, unsigned char* imageOut, con
 	imageOut[x + y * width] = static_cast<unsigned char>(magnitude);
 }
 
+__global__ void GaussBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sigma)
+{
+	int x = threadIdx.x + blockIdx.x * blockDim.x;
+	int y = threadIdx.y + blockIdx.y * blockDim.y;
+
+	if (x > width || y > height)
+		return;
+
+	float gaussKernel[9] = {
+		GaussianFunction2D(-1, -1, sigma), GaussianFunction2D(0, -1, sigma), GaussianFunction2D(1, -1, sigma),
+		GaussianFunction2D(-1, 0, sigma), GaussianFunction2D(0, 0, sigma), GaussianFunction2D(1, 0, sigma),
+		GaussianFunction2D(-1, 1, sigma), GaussianFunction2D(0, 1, sigma), GaussianFunction2D(1, 1, sigma)
+	};
+
+	float kernelSum = 0;
+	for (int i = 0; i < 9; i++) {
+		kernelSum += gaussKernel[i];
+	}
+
+	for (int i = 0; i < 9; i++) {
+		gaussKernel[i] /= kernelSum;
+	}
+
+	imageOut[x + y * width] = Convolution(imageIn, x, y, gaussKernel, width, height);
+}
+
 void cudaImageProcessing::SobelBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
 {
 	unsigned char* cudaImageIn = NULL;
@@ -73,6 +106,29 @@ void cudaImageProcessing::SobelBlur(const unsigned char* imageIn, unsigned char*
 	dim3 gridDim(ceil(float(width) / float(blockDim.x)), ceil(float(height) / float(blockDim.y)));
 
 	Sobel <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height);
+
+	cudaDeviceSynchronize();
+
+	cudaMemcpy(imageOut, cudaImageOut, width * height * sizeof(unsigned char), cudaMemcpyDeviceToHost);
+
+	cudaFree(cudaImageIn);
+	cudaFree(cudaImageOut);
+}
+
+void cudaImageProcessing::GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sigma)
+{
+	unsigned char* cudaImageIn = NULL;
+	unsigned char* cudaImageOut = NULL;
+
+	cudaMalloc((void**)&cudaImageIn, width * height * sizeof(unsigned char));
+	cudaMalloc((void**)&cudaImageOut, width * height * sizeof(unsigned char));
+
+	cudaMemcpy(cudaImageIn, imageIn, width * height * sizeof(unsigned char), cudaMemcpyHostToDevice);
+
+	dim3 blockDim(9, 9);
+	dim3 gridDim(ceil(float(width) / float(blockDim.x)), ceil(float(height) / float(blockDim.y)));
+
+	GaussBlur <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, sigma);
 
 	cudaDeviceSynchronize();
 
