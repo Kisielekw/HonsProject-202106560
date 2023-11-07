@@ -43,6 +43,39 @@ void cppImageProcessing::SobelBlur(const unsigned char* imageIn, unsigned char* 
 	delete[] sobelY;
 }
 
+void cppImageProcessing::GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sigma)
+{
+	float gaussKernel[9] = {
+		GaussianFunction2D(-1, -1, sigma), GaussianFunction2D(0, -1, sigma), GaussianFunction2D(1, -1, sigma),
+		GaussianFunction2D(-1, 0, sigma), GaussianFunction2D(0, 0, sigma), GaussianFunction2D(1, 0, sigma),
+		GaussianFunction2D(-1, 1, sigma), GaussianFunction2D(0, 1, sigma), GaussianFunction2D(1, 1, sigma)
+	};
+
+	float kernelSum = 0;
+	for (int i = 0; i < 9; i++) {
+		kernelSum += gaussKernel[i];
+	}
+
+	for (int i = 0; i < 9; i++) {
+		gaussKernel[i] /= kernelSum;
+	}
+
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			imageOut[x + y * width] = Convolution(imageIn, gaussKernel, x, y, width, height);
+		}
+	}
+}
+
+float cppImageProcessing::GaussianFunction2D(const int x, const int y, const float sigma)
+{
+	double expPow = static_cast<double>((x * x) + (y * y)) / (2.0 * static_cast<double>(sigma * sigma));
+	double exponentail = exp(-expPow);
+	return exponentail / (2 * 3.1415 * (sigma * sigma));
+}
+
 int cppImageProcessing::Convolution(const unsigned char* imageIn, const float* kernal, const int x, const int y, const int width, const int height)
 {
 	int sum = 0;
