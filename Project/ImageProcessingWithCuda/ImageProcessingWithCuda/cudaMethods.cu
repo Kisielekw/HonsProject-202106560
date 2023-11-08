@@ -36,7 +36,7 @@ __device__ float GaussianFunction2D(const int x, const int y, const float sigma)
 	return exponentail / (2 * 3.1415 * (sigma * sigma));
 }
 
-__global__ void Sobel(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
+__global__ void SobelBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
 {
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
 	int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -105,7 +105,7 @@ void cudaImageProcessing::Sobel(const unsigned char* imageIn, unsigned char* ima
 	dim3 blockDim(9, 9);
 	dim3 gridDim(ceil(float(width) / float(blockDim.x)), ceil(float(height) / float(blockDim.y)));
 
-	Sobel <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height);
+	SobelBlur <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height);
 
 	cudaDeviceSynchronize();
 
