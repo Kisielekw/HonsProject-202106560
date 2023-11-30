@@ -92,7 +92,15 @@ __global__ void GaussBlur(const unsigned char* imageIn, unsigned char* imageOut,
 	imageOut[x + y * width] = Convolution(imageIn, x, y, gaussKernel, width, height);
 }
 
-void cudaImageProcessing::Sobel(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
+/// <summary>
+/// Preforms a Sobel Edge Detection on the imageIn and stores the result in imageOut.
+/// </summary>
+/// <param name="imageIn">The image that the Sobel is meant to be preformed on</param>
+/// <param name="imageOut"The output image of the Sobel></param>
+/// <param name="width">The width of the image</param>
+/// <param name="height">the height of the image</param>
+/// <returns>Returns the time it took to preform the filter in microseconds</returns>
+std::chrono::microseconds cudaImageProcessing::Sobel(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
 {
 	unsigned char* cudaImageIn = NULL;
 	unsigned char* cudaImageOut = NULL;
@@ -102,20 +110,36 @@ void cudaImageProcessing::Sobel(const unsigned char* imageIn, unsigned char* ima
 
 	cudaMemcpy(cudaImageIn, imageIn, width * height * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
-	dim3 blockDim(9, 9);
+	dim3 blockDim(8, 8);
 	dim3 gridDim(ceil(float(width) / float(blockDim.x)), ceil(float(height) / float(blockDim.y)));
+
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
 	SobelBlur <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height);
 
 	cudaDeviceSynchronize();
 
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+
 	cudaMemcpy(imageOut, cudaImageOut, width * height * sizeof(unsigned char), cudaMemcpyDeviceToHost);
 
 	cudaFree(cudaImageIn);
 	cudaFree(cudaImageOut);
+
+	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+	return duration;
 }
 
-void cudaImageProcessing::GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sigma)
+/// <summary>
+/// Preforms a Gaussian Blur on the imageIn and stores the result in imageOut.
+/// </summary>
+/// <param name="imageIn">The image that the Gaussian Blure is meant to be preformed on</param>
+/// <param name="imageOut">The output image of the Gaussian Blure</param>
+/// <param name="width">The width of the image</param>
+/// <param name="height">The height of the image</param>
+/// <param name="sigma">The standard ceviation of the blure</param>
+/// <returns>Returns the time it took to preform the filter in microseconds</returns>
+std::chrono::microseconds cudaImageProcessing::GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sigma)
 {
 	unsigned char* cudaImageIn = NULL;
 	unsigned char* cudaImageOut = NULL;
@@ -125,10 +149,14 @@ void cudaImageProcessing::GaussianBlur(const unsigned char* imageIn, unsigned ch
 
 	cudaMemcpy(cudaImageIn, imageIn, width * height * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
-	dim3 blockDim(9, 9);
+	dim3 blockDim(8, 8);
 	dim3 gridDim(ceil(float(width) / float(blockDim.x)), ceil(float(height) / float(blockDim.y)));
 
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
 	GaussBlur <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, sigma);
+
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
 
 	cudaDeviceSynchronize();
 
@@ -136,4 +164,7 @@ void cudaImageProcessing::GaussianBlur(const unsigned char* imageIn, unsigned ch
 
 	cudaFree(cudaImageIn);
 	cudaFree(cudaImageOut);
+
+	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+	return duration;
 }

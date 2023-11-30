@@ -2,8 +2,18 @@
 #include <cmath>
 #include <algorithm>
 
-void cppImageProcessing::Sobel(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
+/// <summary>
+/// Preforms a Sobel Edge Detection on the imageIn and stores the result in imageOut.
+/// </summary>
+/// <param name="imageIn">The image that the Sobel is meant to be preformed on</param>
+/// <param name="imageOut"The output image of the Sobel></param>
+/// <param name="width">The width of the image</param>
+/// <param name="height">the height of the image</param>
+/// <returns>Returns the time it took to preform the filter in microseconds</returns>
+std::chrono::microseconds cppImageProcessing::Sobel(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
 {
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
 	float Gx[9] = {
 		1, 0, -1,
 		2, 0, -2,
@@ -14,36 +24,40 @@ void cppImageProcessing::Sobel(const unsigned char* imageIn, unsigned char* imag
 		0, 0, 0,
 		-1, -2, -1
 	};
-
-	int* sobelX = new int[width * height];
-	int* sobelY = new int[width * height];
-
+	
 	for (int i = 0; i < 2; i++)
 	{
 		for (int y = 0; y < height; y++)
 		{
 			for (int x = 0; x < width; x++)
 			{
-				if (i == 0)
-					sobelX[x + (y * width)] = Convolution(imageIn, Gx, x, y, width, height);
-				if (i == 1)
-					sobelY[x + (y * width)] = Convolution(imageIn, Gy, x, y, width, height);
+				int sobelX = Convolution(imageIn, Gx, x, y, width, height);
+				int sobelY = Convolution(imageIn, Gy, x, y, width, height);
+
+				int magnitude = static_cast<int>(sqrt(static_cast<double>((sobelX * sobelX) + (sobelY * sobelY))));
+
+				imageOut[x + (y * width)] = static_cast<unsigned char>(std::min(255, std::max(0, magnitude)));
 			}
 		}
 	}
 
-	for (int i = 0; i < width * height; i++)
-	{
-		int temp = static_cast<int>(sqrt(static_cast<double>((sobelX[i] * sobelX[i]) + (sobelY[i] * sobelY[i]))));
-		temp = std::min(255, std::max(0, temp));
-		imageOut[i] = static_cast<unsigned char>(temp);
-	}
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
 
-	delete[] sobelX;
-	delete[] sobelY;
+	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+	return duration;
 }
 
-void cppImageProcessing::GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sigma)
+/// <summary>
+/// Preforms a Gaussian Blur on the imageIn and stores the result in imageOut.
+/// </summary>
+/// <param name="imageIn">The image that the Gaussian Blure is meant to be preformed on</param>
+/// <param name="imageOut">The output image of the Gaussian Blure</param>
+/// <param name="width">The width of the image</param>
+/// <param name="height">The height of the image</param>
+/// <param name="sigma">The standard ceviation of the blure</param>
+/// <returns>Returns the time it took to preform the filter in microseconds</returns>
+std::chrono::microseconds cppImageProcessing::GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sigma)
 {
 	float gaussKernel[9] = {
 		GaussianFunction2D(-1, -1, sigma), GaussianFunction2D(0, -1, sigma), GaussianFunction2D(1, -1, sigma),
@@ -60,6 +74,8 @@ void cppImageProcessing::GaussianBlur(const unsigned char* imageIn, unsigned cha
 		gaussKernel[i] /= kernelSum;
 	}
 
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
 	for (int y = 0; y < height; y++)
 	{
 		for (int x = 0; x < width; x++)
@@ -67,6 +83,12 @@ void cppImageProcessing::GaussianBlur(const unsigned char* imageIn, unsigned cha
 			imageOut[x + y * width] = Convolution(imageIn, gaussKernel, x, y, width, height);
 		}
 	}
+
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+
+	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+	return duration;
 }
 
 float cppImageProcessing::GaussianFunction2D(const int x, const int y, const float sigma)
