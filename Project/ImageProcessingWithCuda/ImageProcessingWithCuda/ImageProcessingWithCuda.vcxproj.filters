@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="cudaMethods.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Image Library">
+      <UniqueIdentifier>{d3dfddeb-5031-41dc-a5a9-7cb308123281}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="standard_test_images\jetplane.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\lake.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\lena_color_256.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\lena_color_512.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\lena_gray_256.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\lena_gray_512.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\livingroom.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\house.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\cameraman.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\mandril_color.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\mandril_gray.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\peppers_color.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\peppers_gray.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\pirate.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\walkbridge.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\woman_blonde.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+    <Image Include="standard_test_images\woman_darkhair.tif">
+      <Filter>Image Library</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="cppMethods.cpp" />
+    <ClCompile Include="Main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ImageProcessing.h" />
+  </ItemGroup>
+</Project>
