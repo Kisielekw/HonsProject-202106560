@@ -156,9 +156,9 @@ std::chrono::microseconds cudaImageProcessing::GaussianBlur(const unsigned char*
 
 	GaussBlur <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, sigma);
 
-	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-
 	cudaDeviceSynchronize();
+
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
 
 	cudaMemcpy(imageOut, cudaImageOut, width * height * sizeof(unsigned char), cudaMemcpyDeviceToHost);
 
