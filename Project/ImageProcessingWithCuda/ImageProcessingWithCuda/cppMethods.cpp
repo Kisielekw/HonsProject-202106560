@@ -83,6 +83,61 @@ std::chrono::microseconds cppImageProcessing::GaussianBlur(const unsigned char* 
 	return duration;
 }
 
+std::chrono::microseconds cppImageProcessing::DoG(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sd1, const float sd2, const unsigned int kernalSize)
+{
+	if (kernalSize % 2 != 1)
+		throw std::invalid_argument("Kernal size must be odd");
+
+	if (sd1 >= sd2)
+		throw std::invalid_argument("sd1 must be less than sd2");
+
+	float* gaussKernel1 = new float[kernalSize * kernalSize];
+	float* gaussKernel2 = new float[kernalSize * kernalSize];
+
+	int halfKernalSize = (kernalSize - 1) / 2;
+
+	for (int y = -halfKernalSize; y <= halfKernalSize; y++)
+	{
+		for (int x = -halfKernalSize; x <= halfKernalSize; x++)
+		{
+			gaussKernel1[(x + halfKernalSize) + ((y + halfKernalSize) * kernalSize)] = GaussianFunction2D(x, y, sd1);
+			gaussKernel2[(x + halfKernalSize) + ((y + halfKernalSize) * kernalSize)] = GaussianFunction2D(x, y, sd2);
+		}
+	}
+
+	float kernelSum1 = 0;
+	float kernelSum2 = 0;
+
+	for (int i = 0; i < kernalSize * kernalSize; i++) {
+		kernelSum1 += gaussKernel1[i];
+		kernelSum2 += gaussKernel2[i];
+	}
+
+	for (int i = 0; i < kernalSize * kernalSize; i++) {
+		gaussKernel1[i] /= kernelSum1;
+		gaussKernel2[i] /= kernelSum2;
+	}
+
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			int blur1 = Convolution(imageIn, gaussKernel1, x, y, width, height, kernalSize);
+			int blur2 = Convolution(imageIn, gaussKernel2, x, y, width, height, kernalSize);
+
+			imageOut[x + (y * width)] = static_cast<unsigned char>(std::min(255, std::max(0, blur1 - blur2)));
+		}
+	}
+
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+
+	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+	return duration;
+}
+
 float cppImageProcessing::GaussianFunction2D(const int x, const int y, const float sigma)
 {
 	double expPow = static_cast<double>((x * x) + (y * y)) / (2.0 * static_cast<double>(sigma * sigma));
