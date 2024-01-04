@@ -142,6 +142,20 @@ __global__ void DoG(const unsigned char* imageIn, unsigned char* imageOut, const
 	free(gaussKernel2);
 }
 
+__global__ void Threshold(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const unsigned char threshold)
+{
+	int x = threadIdx.x + blockIdx.x * blockDim.x;
+	int y = threadIdx.y + blockIdx.y * blockDim.y;
+
+	if (x > width || y > height)
+		return;
+
+	if (imageIn[x + y * width] > threshold)
+		imageOut[x + y * width] = 255;
+	else
+		imageOut[x + y * width] = 0;
+}
+
 std::chrono::microseconds cudaImageProcessing::Sobel(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
 {
 	unsigned char* cudaImageIn = NULL;
@@ -227,6 +241,37 @@ std::chrono::microseconds cudaImageProcessing::DoG(const unsigned char* imageIn,
 	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
 	DoG <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, sd1, sd2, kernalSize);
+
+	cudaDeviceSynchronize();
+
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+
+	cudaMemcpy(imageOut, cudaImageOut, width * height * sizeof(unsigned char), cudaMemcpyDeviceToHost);
+
+	cudaFree(cudaImageIn);
+	cudaFree(cudaImageOut);
+
+	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+	return duration;
+}
+
+std::chrono::microseconds cudaImageProcessing::Threshold(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const unsigned char threshold)
+{
+	unsigned char* cudaImageIn = NULL;
+	unsigned char* cudaImageOut = NULL;
+
+	cudaMalloc((void**)&cudaImageIn, width * height * sizeof(unsigned char));
+	cudaMalloc((void**)&cudaImageOut, width * height * sizeof(unsigned char));
+
+	cudaMemcpy(cudaImageIn, imageIn, width * height * sizeof(unsigned char), cudaMemcpyHostToDevice);
+
+	dim3 blockDim(8, 8);
+	dim3 gridDim(ceil(float(width) / float(blockDim.x)), ceil(float(height) / float(blockDim.y)));
+
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
+	Threshold <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, threshold);
 
 	cudaDeviceSynchronize();
 
