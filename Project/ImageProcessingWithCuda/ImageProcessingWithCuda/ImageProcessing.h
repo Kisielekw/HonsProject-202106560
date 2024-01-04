@@ -40,7 +40,7 @@ public:
 	/// <param name="height">The height of the image</param>
 	/// <param name="sd">The standard deviation of the Gaussian</param>
 	/// <returns></returns>
-	static std::chrono::microseconds GaussianBlur(const unsigned char*, unsigned char*, const int, const int, const float);
+	static std::chrono::microseconds GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sd);
 	/// <summary>
 	/// A Sobel edge detection implementation in CUDA
 	/// </summary>
@@ -49,5 +49,5 @@ public:
 	/// <param name="width">The width of the image</param>
 	/// <param name="height">The height of the image</param>
 	/// <returns></returns>
-	static std::chrono::microseconds Sobel(const unsigned char*, unsigned char*, const int, const int);
+	static std::chrono::microseconds Sobel(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height);
 };
