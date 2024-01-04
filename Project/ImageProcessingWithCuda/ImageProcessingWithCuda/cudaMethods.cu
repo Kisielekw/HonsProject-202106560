@@ -102,6 +102,46 @@ __global__ void GaussBlur(const unsigned char* imageIn, unsigned char* imageOut,
 	free(gaussKernel);
 }
 
+__global__ void DoG(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sd1, const float sd2, const unsigned int kernalSize)
+{
+	int x = threadIdx.x + blockIdx.x * blockDim.x;
+	int y = threadIdx.y + blockIdx.y * blockDim.y;
+
+	if (x > width || y > height)
+		return;
+
+	int halfKernalSize = (kernalSize - 1) / 2;
+
+	float* gaussKernel1 = (float*)malloc(sizeof(float) * kernalSize * kernalSize);
+	float* gaussKernel2 = (float*)malloc(sizeof(float) * kernalSize * kernalSize);
+
+	for (int ky = -halfKernalSize; ky <= halfKernalSize; ky++)
+	{
+		for (int kx = -halfKernalSize; kx <= halfKernalSize; kx++)
+		{
+			gaussKernel1[(kx + halfKernalSize) + ((ky + halfKernalSize) * kernalSize)] = GaussianFunction2D(kx, ky, sd1);
+			gaussKernel2[(kx + halfKernalSize) + ((ky + halfKernalSize) * kernalSize)] = GaussianFunction2D(kx, ky, sd2);
+		}
+	}
+
+	float kernelSum1 = 0;
+	float kernelSum2 = 0;
+	for (int i = 0; i < 9; i++) {
+		kernelSum1 += gaussKernel1[i];
+		kernelSum2 += gaussKernel2[i];
+	}
+
+	for (int i = 0; i < 9; i++) {
+		gaussKernel1[i] /= kernelSum1;
+		gaussKernel2[i] /= kernelSum2;
+	}
+
+	imageOut[x + y * width] = Convolution(imageIn, x, y, gaussKernel1, width, height, kernalSize) - Convolution(imageIn, x, y, gaussKernel2, width, height, kernalSize);
+
+	free(gaussKernel1);
+	free(gaussKernel2);
+}
+
 std::chrono::microseconds cudaImageProcessing::Sobel(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
 {
 	unsigned char* cudaImageIn = NULL;
@@ -134,6 +174,9 @@ std::chrono::microseconds cudaImageProcessing::Sobel(const unsigned char* imageI
 
 std::chrono::microseconds cudaImageProcessing::GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sigma, const unsigned int kernalSize)
 {
+	if(kernalSize % 2 == 0)
+		throw std::invalid_argument("Kernal size must be odd");
+
 	unsigned char* cudaImageIn = NULL;
 	unsigned char* cudaImageOut = NULL;
 
@@ -159,5 +202,42 @@ std::chrono::microseconds cudaImageProcessing::GaussianBlur(const unsigned char*
 	cudaFree(cudaImageOut);
 
 	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+	return duration;
+}
+
+std::chrono::microseconds cudaImageProcessing::DoG(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sd1, const float sd2, const unsigned int kernalSize)
+{
+	if(kernalSize % 2 == 0)
+		throw std::invalid_argument("Kernal size must be odd");
+
+	if(sd1 >= sd2)
+		throw std::invalid_argument("sd1 must be less than sd2");
+
+	unsigned char* cudaImageIn = NULL;
+	unsigned char* cudaImageOut = NULL;
+
+	cudaMalloc((void**)&cudaImageIn, width * height * sizeof(unsigned char));
+	cudaMalloc((void**)&cudaImageOut, width * height * sizeof(unsigned char));
+
+	cudaMemcpy(cudaImageIn, imageIn, width * height * sizeof(unsigned char), cudaMemcpyHostToDevice);
+
+	dim3 blockDim(8, 8);
+	dim3 gridDim(ceil(float(width) / float(blockDim.x)), ceil(float(height) / float(blockDim.y)));
+
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
+	//DoG <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, sd1, sd2, kernalSize);
+
+	cudaDeviceSynchronize();
+
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+
+	cudaMemcpy(imageOut, cudaImageOut, width * height * sizeof(unsigned char), cudaMemcpyDeviceToHost);
+
+	cudaFree(cudaImageIn);
+	cudaFree(cudaImageOut);
+
+	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
 	return duration;
 }
