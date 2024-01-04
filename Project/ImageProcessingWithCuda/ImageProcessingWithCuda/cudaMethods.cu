@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 
 __device__ int Convolution(const unsigned char* imageIn,const int x, const int y, const float* kernal, const int width, const int height, unsigned int kernalSize)
 {
@@ -188,8 +189,11 @@ std::chrono::microseconds cudaImageProcessing::Sobel(const unsigned char* imageI
 
 std::chrono::microseconds cudaImageProcessing::GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sigma, const unsigned int kernalSize)
 {
-	if(kernalSize % 2 == 0)
-		throw std::invalid_argument("Kernal size must be odd");
+	if (kernalSize % 2 != 1)
+	{
+		std::cout << "Kernal size must be odd" << std::endl;
+		return std::chrono::microseconds(0);
+	}
 
 	unsigned char* cudaImageIn = NULL;
 	unsigned char* cudaImageOut = NULL;
@@ -221,11 +225,18 @@ std::chrono::microseconds cudaImageProcessing::GaussianBlur(const unsigned char*
 
 std::chrono::microseconds cudaImageProcessing::DoG(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sd1, const float sd2, const unsigned int kernalSize)
 {
-	if(kernalSize % 2 == 0)
-		throw std::invalid_argument("Kernal size must be odd");
+	if (kernalSize % 2 != 1)
+	{
+		std::cout << "Kernal size must be odd" << std::endl;
+		return std::chrono::microseconds(0);
+	}
 
-	if(sd1 >= sd2)
-		throw std::invalid_argument("sd1 must be less than sd2");
+	if (sd1 >= sd2)
+	{
+		std::cout << "sd1 must be less than sd2" << std::endl;
+		return std::chrono::microseconds(0);
+	}
+		
 
 	unsigned char* cudaImageIn = NULL;
 	unsigned char* cudaImageOut = NULL;
