@@ -102,7 +102,7 @@ __global__ void GaussBlur(const unsigned char* imageIn, unsigned char* imageOut,
 	free(gaussKernel);
 }
 
-__global__ void DoG(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sd1, const float sd2, const unsigned int kernalSize)
+__global__ void DoGCuda(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sd1, const float sd2, const unsigned int kernalSize)
 {
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
 	int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -142,7 +142,7 @@ __global__ void DoG(const unsigned char* imageIn, unsigned char* imageOut, const
 	free(gaussKernel2);
 }
 
-__global__ void Threshold(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const unsigned char threshold)
+__global__ void ThresholdCuda(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const unsigned char threshold)
 {
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
 	int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -240,7 +240,7 @@ std::chrono::microseconds cudaImageProcessing::DoG(const unsigned char* imageIn,
 
 	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
-	DoG <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, sd1, sd2, kernalSize);
+	DoGCuda <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, sd1, sd2, kernalSize);
 
 	cudaDeviceSynchronize();
 
@@ -271,7 +271,7 @@ std::chrono::microseconds cudaImageProcessing::Threshold(const unsigned char* im
 
 	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
-	Threshold <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, threshold);
+	ThresholdCuda <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, threshold);
 
 	cudaDeviceSynchronize();
 
