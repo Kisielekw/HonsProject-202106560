@@ -226,7 +226,7 @@ std::chrono::microseconds cudaImageProcessing::DoG(const unsigned char* imageIn,
 
 	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
-	//DoG <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, sd1, sd2, kernalSize);
+	DoG <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, sd1, sd2, kernalSize);
 
 	cudaDeviceSynchronize();
 
