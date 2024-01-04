@@ -23,8 +23,8 @@ std::chrono::microseconds cppImageProcessing::Sobel(const unsigned char* imageIn
 		{
 			for (int x = 0; x < width; x++)
 			{
-				int sobelX = Convolution(imageIn, Gx, x, y, width, height);
-				int sobelY = Convolution(imageIn, Gy, x, y, width, height);
+				int sobelX = Convolution(imageIn, Gx, x, y, width, height, 3);
+				int sobelY = Convolution(imageIn, Gy, x, y, width, height, 3);
 
 				int magnitude = static_cast<int>(sqrt(static_cast<double>((sobelX * sobelX) + (sobelY * sobelY))));
 
@@ -40,20 +40,29 @@ std::chrono::microseconds cppImageProcessing::Sobel(const unsigned char* imageIn
 	return duration;
 }
 
-std::chrono::microseconds cppImageProcessing::GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sigma)
+std::chrono::microseconds cppImageProcessing::GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sigma, const unsigned int kernalSize)
 {
-	float gaussKernel[9] = {
-		GaussianFunction2D(-1, -1, sigma), GaussianFunction2D(0, -1, sigma), GaussianFunction2D(1, -1, sigma),
-		GaussianFunction2D(-1, 0, sigma), GaussianFunction2D(0, 0, sigma), GaussianFunction2D(1, 0, sigma),
-		GaussianFunction2D(-1, 1, sigma), GaussianFunction2D(0, 1, sigma), GaussianFunction2D(1, 1, sigma)
-	};
+	if(kernalSize % 2 != 1)
+		throw std::invalid_argument("Kernal size must be odd");
+
+	float* gaussKernel = new float[kernalSize * kernalSize];
+
+	int halfKernalSize = (kernalSize - 1) / 2;
+
+	for (int y = -halfKernalSize; y <= halfKernalSize; y++)
+	{
+		for (int x = -halfKernalSize; x <= halfKernalSize; x++)
+		{
+			gaussKernel[(x + halfKernalSize) + ((y + halfKernalSize) * kernalSize)] = GaussianFunction2D(x, y, sigma);
+		}
+	}
 
 	float kernelSum = 0;
-	for (int i = 0; i < 9; i++) {
+	for (int i = 0; i < kernalSize * kernalSize; i++) {
 		kernelSum += gaussKernel[i];
 	}
 
-	for (int i = 0; i < 9; i++) {
+	for (int i = 0; i < kernalSize * kernalSize; i++) {
 		gaussKernel[i] /= kernelSum;
 	}
 
@@ -63,7 +72,7 @@ std::chrono::microseconds cppImageProcessing::GaussianBlur(const unsigned char* 
 	{
 		for (int x = 0; x < width; x++)
 		{
-			imageOut[x + y * width] = Convolution(imageIn, gaussKernel, x, y, width, height);
+			imageOut[x + y * width] = Convolution(imageIn, gaussKernel, x, y, width, height, kernalSize);
 		}
 	}
 
@@ -81,21 +90,23 @@ float cppImageProcessing::GaussianFunction2D(const int x, const int y, const flo
 	return exponentail / (2 * 3.1415 * (sigma * sigma));
 }
 
-int cppImageProcessing::Convolution(const unsigned char* imageIn, const float* kernal, const int x, const int y, const int width, const int height)
+int cppImageProcessing::Convolution(const unsigned char* imageIn, const float* kernal, const int x, const int y, const int width, const int height, const unsigned int kernalSize)
 {
 	int sum = 0;
 
-	for (int ky = -1; ky < 2; ky++)
+	int halfKernalSize = (kernalSize - 1) / 2;
+
+	for (int ky = -halfKernalSize; ky <= halfKernalSize; ky++)
 	{
 		int curentY = ky + y;
 		if (curentY >= height || curentY < 0)
 			continue;
-		for (int kx = -1; kx < 2; kx++)
+		for (int kx = -halfKernalSize; kx <= halfKernalSize; kx++)
 		{
 			int curentX = kx + x;
 			if (curentX >= width || curentX < 0)
 				continue;
-			sum += imageIn[curentX + (curentY * width)] * kernal[(kx + 1) + ((ky + 1) * 3)];
+			sum += imageIn[curentX + (curentY * width)] * kernal[(kx + halfKernalSize) + ((ky + halfKernalSize) * kernalSize)];
 		}
 	}
 

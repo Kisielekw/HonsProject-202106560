@@ -12,8 +12,9 @@ public:
 	/// <param name="width">The width of the image</param>
 	/// <param name="height">The height of the image</param>
 	/// <param name="sd">The standard deviation of the Gaussian</param>
+	/// <param name="kernalSize">The size of the kernal</param>
 	/// <returns></returns>
-	static std::chrono::microseconds GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sd);
+	static std::chrono::microseconds GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sd, const unsigned int kernalSize);
 	/// <summary>
 	/// A Sobel edge detection implementation in C++
 	/// </summary>
@@ -22,9 +23,9 @@ public:
 	/// <param name="width">The width of the image</param>
 	/// <param name="height">The height of the image</param>
 	/// <returns></returns>
-	static std::chrono::microseconds Sobel(const unsigned char* imageIn, unsigned char*imageOut, const int width, const int height);
+	static std::chrono::microseconds Sobel(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height);
 private:
-	static int Convolution(const unsigned char*, const float*, const int, const int, const int, const int);
+	static int Convolution(const unsigned char*, const float*, const int, const int, const int, const int, const unsigned int);
 	static float GaussianFunction2D(const int, const int, const float);
 };
 
@@ -39,8 +40,9 @@ public:
 	/// <param name="width">The width of the image</param>
 	/// <param name="height">The height of the image</param>
 	/// <param name="sd">The standard deviation of the Gaussian</param>
+	/// <param name="kernalSize">The size of the kernal</param>
 	/// <returns></returns>
-	static std::chrono::microseconds GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sd);
+	static std::chrono::microseconds GaussianBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sd, const unsigned int kernalSize);
 	/// <summary>
 	/// A Sobel edge detection implementation in CUDA
 	/// </summary>
