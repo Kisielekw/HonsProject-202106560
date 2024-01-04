@@ -135,6 +135,24 @@ std::chrono::microseconds cppImageProcessing::DoG(const unsigned char* imageIn, 
 
 	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
+	duration += Threshold(imageOut, imageOut, width, height, 5);
+
+	return duration;
+}
+
+std::chrono::microseconds cppImageProcessing::Threshold(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const unsigned char threshold)
+{
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
+	for (int i = 0; i < width * height; i++)
+	{
+		imageOut[i] = imageIn[i] > threshold ? 255 : 0;
+	}
+
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+
+	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
 	return duration;
 }
 

@@ -36,6 +36,16 @@ public:
 	/// <param name="kernalSize">The size of the kernal</param>
 	/// <returns></returns>
 	static std::chrono::microseconds DoG(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sd1, const float sd2, const unsigned int kernalSize);
+	/// <summary>
+	/// A thresholding implementation in C++
+	/// </summary>
+	/// <param name="imageIn">The image being thresholded</param>
+	/// <param name="imageOut">The output image of the threshold</param>
+	/// <param name="width">The width of the image</param>
+	/// <param name="height">The height of the image</param>
+	/// <param name="threshold">The threshold</param>
+	/// <returns></returns>
+	static std::chrono::microseconds Threshold(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const unsigned char threshold);
 private:
 	static int Convolution(const unsigned char*, const float*, const int, const int, const int, const int, const unsigned int);
 	static float GaussianFunction2D(const int, const int, const float);
@@ -76,4 +86,14 @@ public:
 	/// <param name="kernalSize">The size of the kernal</param>
 	/// <returns></returns>
 	static std::chrono::microseconds DoG(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sd1, const float sd2, const unsigned int kernalSize);
+	/// <summary>
+	/// A thresholding implementation in CUDA
+	/// </summary>
+	/// <param name="imageIn">The image being thresholded</param>
+	/// <param name="imageOut">The output image of the threshold</param>
+	/// <param name="width">The width of the image</param>
+	/// <param name="height">The height of the image</param>
+	/// <param name="threshold">The threshold</param>
+	/// <returns></returns>
+	static std::chrono::microseconds Threshold(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const unsigned char threshold);
 };
