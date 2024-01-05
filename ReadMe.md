@@ -3,6 +3,8 @@ This is my 3rd year honnor stage project in which i will compair image processin
 
 ## The Algorithms
 At the moment I have fully implemented 1 algorithm and implemented another only in c++. 
+- [**Sobel**](###Sobel)
+- [**K-Means Clustering**](###K-Means-Clustering)
 
 ### Sobel
 The sobel opperator is an edge detecting algorithm that returns all the edges in an image. Additionaly it can also return the direction of each edge. My implementation only return the edge without the directions.
