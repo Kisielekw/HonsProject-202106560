@@ -85,38 +85,14 @@ std::chrono::microseconds cppImageProcessing::GaussianBlur(const unsigned char* 
 
 std::chrono::microseconds cppImageProcessing::KMeansGrayscale(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const int k, const int iterationNum)
 {
-	struct Clustriod
-	{
-		unsigned int clustriodID;
-		unsigned char value;
-	};
-
-	struct Pixel
-	{
-		unsigned int x, y;
-		unsigned int clustriodID;
-		unsigned char value;
-	};
-
-	Clustriod* clustriods = new Clustriod[k];
+	unsigned char* clustriods = new unsigned char[k];
 
 	for (int i = 0; i < k; i++)
 	{
-		clustriods[i].clustriodID = i;
-		clustriods[i].value = static_cast<unsigned char>(rand() % 256);
+		clustriods[i] = static_cast<unsigned char>(rand() % 256);
 	}
 
-	Pixel* pixels = new Pixel[width * height];
-	for (int y = 0; y < height; y++)
-	{
-		for (int x = 0; x < width; x++)
-		{
-			pixels[x + (y * width)].x = x;
-			pixels[x + (y * width)].y = y;
-			pixels[x + (y * width)].value = imageIn[x + (y * width)];
-			pixels[x + (y * width)].clustriodID = 0;
-		}
-	}
+	int* pixels = new int[width * height] {0};
 
 	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
@@ -128,11 +104,11 @@ std::chrono::microseconds cppImageProcessing::KMeansGrayscale(const unsigned cha
 
 			for (int clustriod = 0; clustriod < k; clustriod++)
 			{
-				unsigned char distance = abs(clustriods[clustriod].value - pixels[pixel].value);
+				unsigned char distance = abs(clustriods[clustriod] - imageIn[pixel]);
 				if (minDist > distance)
 				{
 					minDist = distance;
-					pixels[pixel].clustriodID = clustriods[clustriod].clustriodID;
+					pixels[pixel] = clustriod;
 				}
 			}
 		}
@@ -145,16 +121,16 @@ std::chrono::microseconds cppImageProcessing::KMeansGrayscale(const unsigned cha
 			int amount = 0;
 			for (int pixel = 0; pixel < width * height; pixel++)
 			{
-				if (pixels[pixel].clustriodID == clustriods[clustriod].clustriodID)
+				if (pixels[pixel] == clustriod)
 				{
-					sum += pixels[pixel].value;
+					sum += imageIn[pixel];
 					amount++;
 				}
 			}
 
 			if (amount != 0)
 			{
-				clustriods[clustriod].value = sum / amount;
+				clustriods[clustriod] = sum / amount;
 				change = true;
 			}
 		}
@@ -165,12 +141,15 @@ std::chrono::microseconds cppImageProcessing::KMeansGrayscale(const unsigned cha
 
 	for (int i = 0; i < width * height; i++)
 	{
-		imageOut[pixels[i].x + pixels[i].y * width] = clustriods[pixels[i].clustriodID].value;
+		imageOut[i] = clustriods[pixels[i]];
 	}
 
 	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
 
 	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+	delete[] pixels;
+	delete[] clustriods;
 
 	return duration;
 }
