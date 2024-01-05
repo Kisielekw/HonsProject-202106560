@@ -83,6 +83,98 @@ std::chrono::microseconds cppImageProcessing::GaussianBlur(const unsigned char* 
 	return duration;
 }
 
+std::chrono::microseconds cppImageProcessing::KMeansGrayscale(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const int k, const int iterationNum)
+{
+	struct Clustriod
+	{
+		unsigned int clustriodID;
+		unsigned char value;
+	};
+
+	struct Pixel
+	{
+		unsigned int x, y;
+		unsigned int clustriodID;
+		unsigned char value;
+	};
+
+	Clustriod* clustriods = new Clustriod[k];
+
+	for (int i = 0; i < k; i++)
+	{
+		clustriods[i].clustriodID = i;
+		clustriods[i].value = static_cast<unsigned char>(rand() % 256);
+	}
+
+	Pixel* pixels = new Pixel[width * height];
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			pixels[x + (y * width)].x = x;
+			pixels[x + (y * width)].y = y;
+			pixels[x + (y * width)].value = imageIn[x + (y * width)];
+			pixels[x + (y * width)].clustriodID = 0;
+		}
+	}
+
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
+	for (int i = 0; i < iterationNum; i++)
+	{
+		for (int pixel = 0; pixel < width * height; pixel++)
+		{
+			unsigned char minDist = 255;
+
+			for (int clustriod = 0; clustriod < k; clustriod++)
+			{
+				unsigned char distance = abs(clustriods[clustriod].value - pixels[pixel].value);
+				if (minDist > distance)
+				{
+					minDist = distance;
+					pixels[pixel].clustriodID = clustriods[clustriod].clustriodID;
+				}
+			}
+		}
+
+		bool change = false;
+
+		for (int clustriod = 0; clustriod < k; clustriod++)
+		{
+			int sum = 0;
+			int amount = 0;
+			for (int pixel = 0; pixel < width * height; pixel++)
+			{
+				if (pixels[pixel].clustriodID == clustriods[clustriod].clustriodID)
+				{
+					sum += pixels[pixel].value;
+					amount++;
+				}
+			}
+
+			if (amount != 0)
+			{
+				clustriods[clustriod].value = sum / amount;
+				change = true;
+			}
+		}
+		
+		if (!change)
+			break;
+	}
+
+	for (int i = 0; i < width * height; i++)
+	{
+		imageOut[pixels[i].x + pixels[i].y * width] = clustriods[pixels[i].clustriodID].value;
+	}
+
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+
+	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+	return duration;
+}
+
 float cppImageProcessing::GaussianFunction2D(const int x, const int y, const float sigma)
 {
 	double expPow = static_cast<double>((x * x) + (y * y)) / (2.0 * static_cast<double>(sigma * sigma));
