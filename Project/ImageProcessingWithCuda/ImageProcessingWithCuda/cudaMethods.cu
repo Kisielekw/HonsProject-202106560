@@ -102,6 +102,55 @@ __global__ void GaussBlur(const unsigned char* imageIn, unsigned char* imageOut,
 	free(gaussKernel);
 }
 
+__global__ void PixelClusterSelectGrayscale(const unsigned char* imageIn, int width, int height, int k, unsigned int* pixelCluserIDs, unsigned char* clustriodVaules, unsigned int* clusterSums, unsigned int* clusterAmount)
+{
+	int x = threadIdx.x + blockIdx.x * blockDim.x;
+	int y = threadIdx.y + blockIdx.y * blockDim.y;
+
+	if (x > width || y > height)
+		return;
+
+	unsigned char min = 255;
+	int clusterID = 0;
+
+	for (int i = 0; i < k; i++)
+	{
+		unsigned char distance = abs(imageIn[x + y * width] - clustriodVaules[i]);
+		if (distance < min)
+		{
+			min = distance;
+			clusterID = i;
+		}
+	}
+
+	atomicAdd(clusterSums + clusterID, static_cast<unsigned int>(imageIn[x + y * width]));
+	atomicAdd(clusterAmount + clusterID, 1);
+	pixelCluserIDs[x + y * width] = clusterID;
+}
+
+__global__ void ClustriodMovementGrayscale(unsigned char* clustriodValues, unsigned int* clusterSums, unsigned int* clusterAmount, int k)
+{
+	int x = threadIdx.x + blockIdx.x * blockDim.x;
+
+	if (x > k)
+		return;
+	
+	clustriodValues[x] = clusterSums[x] / clusterAmount[x];
+	clusterSums[x] = 0;
+	clusterAmount[x] = 0;
+}
+
+__global__ void SetPixelsGrayscale(unsigned char* imageOut, int width, int height, unsigned int* pixelClusterIDs, unsigned char* clustriodValues)
+{
+	int x = threadIdx.x + blockIdx.x * blockDim.x;
+	int y = threadIdx.y + blockIdx.y * blockDim.y;
+
+	if (x > width || y > height)
+		return;
+
+	imageOut[x + y * width] = clustriodValues[pixelClusterIDs[x + y * width]];
+}
+
 std::chrono::microseconds cudaImageProcessing::Sobel(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
 {
 	unsigned char* cudaImageIn = NULL;
@@ -159,5 +208,73 @@ std::chrono::microseconds cudaImageProcessing::GaussianBlur(const unsigned char*
 	cudaFree(cudaImageOut);
 
 	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+	return duration;
+}
+
+std::chrono::microseconds cudaImageProcessing::KMeansGrayscale(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const int k, const int iterationNum)
+{
+	unsigned char* clustriodValues = new unsigned char[k];
+	unsigned int* clusterSums = new unsigned int[k] {0};
+	unsigned int* clusterAmount = new unsigned int[k] {0};
+
+	for (int i = 0; i < k; i++)
+	{
+		clustriodValues[i] = static_cast<unsigned char>(rand() % 256);
+	}
+
+	unsigned char* cudaImageIn = nullptr;
+	unsigned char* cudaImageOut = nullptr;
+	unsigned char* cudaClustriodValues = nullptr;
+	unsigned int* cudaPixelClusterIDs = nullptr;
+	unsigned int* cudaClusterSums = nullptr;
+	unsigned int* cudaClusterAmount = nullptr;
+
+	cudaMalloc((void**)&cudaImageIn, sizeof(unsigned char) * width * height);
+	cudaMalloc((void**)&cudaImageOut, sizeof(unsigned char) * width * height);
+	cudaMalloc((void**)&cudaClustriodValues, sizeof(unsigned char) * k);
+	cudaMalloc((void**)&cudaPixelClusterIDs, sizeof(unsigned int) * width * height);
+	cudaMalloc((void**)&cudaClusterSums, sizeof(unsigned int) * k);
+	cudaMalloc((void**)&cudaClusterAmount, sizeof(unsigned int) * k);
+
+	cudaMemcpy((void*)cudaImageIn, imageIn, sizeof(unsigned char) * width * height, cudaMemcpyHostToDevice);
+	cudaMemcpy((void*)cudaClustriodValues, imageIn, sizeof(unsigned char) * k, cudaMemcpyHostToDevice);
+	cudaMemcpy((void*)cudaClusterSums, clusterSums, sizeof(unsigned int) * k, cudaMemcpyHostToDevice);
+	cudaMemcpy((void*)cudaClusterAmount, clusterSums, sizeof(unsigned int) * k, cudaMemcpyHostToDevice);
+
+	delete[] clustriodValues;
+	delete[] clusterSums;
+
+	dim3 pixelBlockDim(8, 8);
+	dim3 clusterBlockDim(k);
+	dim3 pixelGridDim(ceil(float(width) / float(pixelBlockDim.x)), ceil(float(height) / float(pixelBlockDim.y)));
+	dim3 clusterGridDim(1);
+
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
+	for (int i = 0; i < iterationNum; i++)
+	{
+		PixelClusterSelectGrayscale <<< pixelGridDim, pixelBlockDim >>> (cudaImageIn, width, height, k, cudaPixelClusterIDs, cudaClustriodValues, cudaClusterSums, cudaClusterAmount);
+		cudaDeviceSynchronize();
+
+		ClustriodMovementGrayscale <<< clusterGridDim, clusterBlockDim >>> (cudaClustriodValues, cudaClusterSums, cudaClusterAmount, k);
+		cudaDeviceSynchronize();
+	}
+
+	SetPixelsGrayscale <<< pixelGridDim, pixelBlockDim >>> (cudaImageOut, width, height, cudaPixelClusterIDs, cudaClustriodValues);
+	cudaDeviceSynchronize();
+
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+
+	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+	cudaMemcpy(imageOut, cudaImageOut, sizeof(unsigned char) * width * height, cudaMemcpyDeviceToHost);
+
+	cudaFree(cudaImageIn);
+	cudaFree(cudaImageOut);
+	cudaFree(cudaClustriodValues);
+	cudaFree(cudaPixelClusterIDs);
+	cudaFree(cudaClusterSums);
+	cudaFree(cudaClusterAmount);
+	
 	return duration;
 }
