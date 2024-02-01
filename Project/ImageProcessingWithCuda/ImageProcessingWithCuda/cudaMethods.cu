@@ -68,7 +68,7 @@ __global__ void SobelBlur(const unsigned char* imageIn, unsigned char* imageOut,
 	imageOut[x + y * width] = static_cast<unsigned char>(magnitude);
 }
 
-__global__ void GaussBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const float sigma, const unsigned int kernalSize)
+__global__ void GaussBlur(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, float* gaussKernel, const unsigned int kernalSize)
 {
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
 	int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -76,30 +76,28 @@ __global__ void GaussBlur(const unsigned char* imageIn, unsigned char* imageOut,
 	if (x > width || y > height)
 		return;
 
+	imageOut[x + y * width] = Convolution(imageIn, x, y, gaussKernel, width, height, kernalSize);
+}
+
+__global__ void CreateGaussKernal(const float sigma, const unsigned int kernalSize, float* gaussKernel)
+{
+	__shared__ float gauseSum;
+
+	int x = threadIdx.x + blockIdx.x * blockDim.x;
+	int y = threadIdx.y + blockIdx.y * blockDim.y;
+
+	if (x > kernalSize || y > kernalSize)
+		return;
+
 	int halfKernalSize = (kernalSize - 1) / 2;
 
-	float* gaussKernel = (float*)malloc(sizeof(float) * kernalSize * kernalSize);
+	float gaussValue = GaussianFunction2D(x + halfKernalSize, y + halfKernalSize, sigma);
 
-	for (int ky = -halfKernalSize; ky <= halfKernalSize; ky++)
-	{
-		for (int kx = -halfKernalSize; kx <= halfKernalSize; kx++)
-		{
-			gaussKernel[(kx + halfKernalSize) + ((ky + halfKernalSize) * kernalSize)] = GaussianFunction2D(kx, ky, sigma);
-		}
-	}
+	atomicAdd(&gauseSum, gaussValue);
 
-	float kernelSum = 0;
-	for (int i = 0; i < 9; i++) {
-		kernelSum += gaussKernel[i];
-	}
+	__syncthreads();
 
-	for (int i = 0; i < 9; i++) {
-		gaussKernel[i] /= kernelSum;
-	}
-
-	imageOut[x + y * width] = Convolution(imageIn, x, y, gaussKernel, width, height, kernalSize);
-
-	free(gaussKernel);
+	gaussKernel[x + y * kernalSize] = gaussValue / gauseSum;
 }
 
 __global__ void PixelClusterSelectGrayscale(const unsigned char* imageIn, int width, int height, int k, unsigned int* pixelCluserIDs, unsigned char* clustriodVaules, unsigned int* clusterSums, unsigned int* clusterAmount)
@@ -185,18 +183,23 @@ std::chrono::microseconds cudaImageProcessing::GaussianBlur(const unsigned char*
 {
 	unsigned char* cudaImageIn = NULL;
 	unsigned char* cudaImageOut = NULL;
+	float* cudaGaussKernal = NULL;
 
 	cudaMalloc((void**)&cudaImageIn, width * height * sizeof(unsigned char));
 	cudaMalloc((void**)&cudaImageOut, width * height * sizeof(unsigned char));
+	cudaMalloc((void**)&cudaGaussKernal, kernalSize * kernalSize * sizeof(float));
 
 	cudaMemcpy(cudaImageIn, imageIn, width * height * sizeof(unsigned char), cudaMemcpyHostToDevice);
+
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
+	CreateGaussKernal <<< 1, dim3(kernalSize, kernalSize) >>> (sigma, kernalSize, cudaGaussKernal);
+	cudaDeviceSynchronize();
 
 	dim3 blockDim(8, 8);
 	dim3 gridDim(ceil(float(width) / float(blockDim.x)), ceil(float(height) / float(blockDim.y)));
 
-	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-
-	GaussBlur <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, sigma, kernalSize);
+	GaussBlur <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, cudaGaussKernal, kernalSize);
 
 	cudaDeviceSynchronize();
 
