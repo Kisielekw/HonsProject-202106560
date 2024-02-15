@@ -1,7 +1,7 @@
 #pragma once
 #include <chrono>
 
-static class cppImageProcessing
+class cppImageProcessing
 {
 public:
 	/// <summary>
@@ -41,7 +41,7 @@ private:
 	static float GaussianFunction2D(const int, const int, const float);
 };
 
-static class cudaImageProcessing
+class cudaImageProcessing
 {
 public:
 	/// <summary>

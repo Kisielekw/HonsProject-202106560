@@ -82,8 +82,8 @@ void SobelBenchmark(const std::string& testFile)
 			std::chrono::microseconds cppDuration = cppImageProcessing::Sobel(image.data, cppImageData, image.cols, image.rows);
 			std::chrono::microseconds cudaDuration = cudaImageProcessing::Sobel(image.data, cudaImageData, image.cols, image.rows);
 
-			cppDurationSum += cppDuration.count();
-			cudaDurationSum += cudaDuration.count();
+			cppDurationSum += long(cppDuration.count());
+			cudaDurationSum += long(cudaDuration.count());
 		}
 
 		output << cppDurationSum / iterationNum << "," << cudaDurationSum / iterationNum << std::endl;
@@ -154,8 +154,8 @@ void KMeansBenchmark(const std::string& testFile)
 					std::chrono::microseconds cppDuration = cppImageProcessing::KMeansGrayscale(image.data, cppImageData, image.cols, image.rows, k, iterationNum);
 					std::chrono::microseconds cudaDuration = cudaImageProcessing::KMeansGrayscale(image.data, cudaImageData, image.cols, image.rows, k, iterationNum);
 
-					cppDurationSum += cppDuration.count();
-					cudaDurationSum += cudaDuration.count();
+					cppDurationSum += long(cppDuration.count());
+					cudaDurationSum += long(cudaDuration.count());
 				}
 
 				output << cppDurationSum / benchmarkIterationNum << "," << cudaDurationSum / benchmarkIterationNum << std::endl;

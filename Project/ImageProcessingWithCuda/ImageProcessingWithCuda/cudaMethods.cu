@@ -160,7 +160,7 @@ std::chrono::microseconds cudaImageProcessing::Sobel(const unsigned char* imageI
 	cudaMemcpy(cudaImageIn, imageIn, width * height * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
 	dim3 blockDim(8, 8);
-	dim3 gridDim(ceil(float(width) / float(blockDim.x)), ceil(float(height) / float(blockDim.y)));
+	dim3 gridDim(unsigned int(ceil(float(width) / float(blockDim.x))), unsigned int(ceil(float(height) / float(blockDim.y))));
 
 	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
@@ -197,7 +197,8 @@ std::chrono::microseconds cudaImageProcessing::GaussianBlur(const unsigned char*
 	cudaDeviceSynchronize();
 
 	dim3 blockDim(8, 8);
-	dim3 gridDim(ceil(float(width) / float(blockDim.x)), ceil(float(height) / float(blockDim.y)));
+	dim3 gridDim(unsigned int(ceil(float(width) / float(blockDim.x))), unsigned int(ceil(float(height) / float(blockDim.y))));
+
 
 	GaussBlur <<< gridDim, blockDim >>> (cudaImageIn, cudaImageOut, width, height, cudaGaussKernal, kernalSize);
 
@@ -249,7 +250,7 @@ std::chrono::microseconds cudaImageProcessing::KMeansGrayscale(const unsigned ch
 
 	dim3 pixelBlockDim(8, 8);
 	dim3 clusterBlockDim(k);
-	dim3 pixelGridDim(ceil(float(width) / float(pixelBlockDim.x)), ceil(float(height) / float(pixelBlockDim.y)));
+	dim3 pixelGridDim(unsigned int(ceil(float(width) / float(pixelBlockDim.x))), unsigned int(ceil(float(height) / float(pixelBlockDim.y))));
 	dim3 clusterGridDim(1);
 
 	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
