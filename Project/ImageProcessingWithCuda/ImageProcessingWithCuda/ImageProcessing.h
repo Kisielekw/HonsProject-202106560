@@ -35,10 +35,20 @@ public:
 	/// <param name="iterationNum">The number of itterations to be preformed</param>
 	/// <returns>The time it takes to run the algorithm in microseconds</returns>
 	static std::chrono::microseconds KMeansGrayscale(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height, const int k, const int iterationNum);
+	/// <summary>
+	/// The Kuwahara filter implementation in C++
+	/// </summary>
+	/// <param name="imageIn">The image to be filtered</param>
+	/// <param name="imageOut">The image result of the filter</param>
+	/// <param name="width">The width of the image</param>
+	/// <param name="height">The height of the image</param>
+	/// <returns>The time in microseconds for the filter to run</returns>
+	static std::chrono::microseconds Kuwahara(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height);
 
 private:
 	static int Convolution(const unsigned char*, const float*, const int, const int, const int, const int, const unsigned int);
 	static float GaussianFunction2D(const int, const int, const float);
+	static float CalculateStandardDiviation(const unsigned char* imageIn, const int x, const int y, const int width, const int height, float* average, const int kX, const int kY);
 };
 
 class cudaImageProcessing

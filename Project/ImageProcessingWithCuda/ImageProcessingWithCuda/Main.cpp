@@ -277,3 +277,15 @@ int main()
 
 	return 0;
 }
+
+int Main()
+{
+	cv::Mat imageIn = cv::imread("Standard_Test_Images\\image.png", cv::IMREAD_GRAYSCALE);
+	cv::Mat imageOut = cv::Mat(imageIn.rows, imageIn.cols, CV_16UC1);
+
+	cv::hconcat(imageIn, imageOut, imageIn);
+
+	cv::imwrite("Standard_Test_Images\\imageOutCanny.png", imageIn);
+
+	return 1;
+}

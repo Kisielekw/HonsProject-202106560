@@ -154,6 +154,44 @@ std::chrono::microseconds cppImageProcessing::KMeansGrayscale(const unsigned cha
 	return duration;
 }
 
+
+std::chrono::microseconds cppImageProcessing::Kuwahara(const unsigned char* imageIn, unsigned char* imageOut, const int width, const int height)
+{
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			float SmalestStandDiv = 0xffffffff;
+			float* smalestAverage = new float;
+			int smalestX = 0, smalestY = 0;
+
+			for(int sideY = -1; sideY < 1; sideY = 1)
+			{
+				for (int sideX = -1; sideX < 1; sideX = 1)
+				{
+					float standDiv = CalculateStandardDiviation(imageIn, x, y, width, height, smalestAverage, sideX, sideY);
+					if (standDiv < SmalestStandDiv)
+					{
+						SmalestStandDiv = standDiv;
+						smalestX = sideX;
+						smalestY = sideY;
+					}
+				}
+			}
+
+			imageOut[x + (y * width)] = *smalestAverage;
+		}
+	}
+
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+
+	std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+	return duration;
+}
+
 float cppImageProcessing::GaussianFunction2D(const int x, const int y, const float sigma)
 {
 	double expPow = static_cast<double>((x * x) + (y * y)) / (2.0 * static_cast<double>(sigma * sigma));
@@ -182,4 +220,49 @@ int cppImageProcessing::Convolution(const unsigned char* imageIn, const float* k
 	}
 
 	return sum;
+}
+
+float cppImageProcessing::CalculateStandardDiviation(const unsigned char* imageIn, const int x, const int y, const int width, const int height, float *average, const int kX, const int kY )
+{
+	float mu = 0;
+	int dataLength = 0;
+
+	for (int kernalY = 0; kernalY < 3; kernalY++)
+	{
+		int imageY = y + kernalY * kY;
+		if (imageY >= height || imageY < 0)
+			continue;
+
+		for (int kernalX = 0; kernalX < 3; kernalX++)
+		{
+			int imageX = x + kernalX * kX;
+			if (imageX >= width || imageX < 0)
+				continue;
+
+			mu += imageIn[imageX + (imageY * width)];
+			dataLength++;
+		}
+	}
+
+	*average = mu / static_cast<float>(dataLength);
+
+	float sum = 0;
+
+	for (int kernalY = 0; kernalY < 3; kernalY++)
+	{
+		int imageY = y + kernalY * kY;
+		if (imageY >= height || imageY < 0)
+			continue;
+
+		for (int kernalX = 0; kernalX < 3; kernalX++)
+		{
+			int imageX = x + kernalX * kX;
+			if (imageX >= width || imageX < 0)
+				continue;
+
+			sum += pow(imageIn[imageX + (imageY * width)] - mu, 2);
+		}
+	}
+
+	return sqrt(sum / static_cast<float>(dataLength));
 }
